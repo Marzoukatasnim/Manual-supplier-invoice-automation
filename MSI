@@ -1,0 +1,400 @@
+/*----------------Manual Supplier Invoice Automation----------*/
+PROCEDURE Start_Ext_MSI( 
+   info_             IN  OUT VARCHAR2, 
+   load_file_id_     IN     NUMBER, 
+   parameter_string_ IN     VARCHAR2 DEFAULT NULL )  
+IS 
+   ext_file_load_rec_     Ext_File_Load_API.Public_Rec;
+   
+  invoice_id_ VARCHAR2(32000);
+  inv_recipient_ VARCHAR2(15);
+  pay_term_id_ VARCHAR2(30);
+  voucher_text_  VARCHAR2(150);
+ vat_code_ MAN_SUPP_INVOICE_ITEM.vat_code%TYPE;
+
+   income_type_id_ MAN_SUPP_INVOICE_ITEM.IRS1099_TYPE_ID%TYPE;
+   
+   p_id_ VARCHAR2(20);
+   tax_data_ VARCHAR2(32000);
+  
+  p0_ VARCHAR2(32000);
+
+  p1_ VARCHAR2(32000) ;
+
+  p2_ VARCHAR2(32000) ;
+  p3_ VARCHAR2(32000);
+
+  a0_ VARCHAR2(32000);
+  a1_ VARCHAR2(32000) ;
+
+  a2_ VARCHAR2(32000) ;
+  a3_ VARCHAR2(32000);
+  a4_ VARCHAR2(32000) ;
+
+  b0_ VARCHAR2(32000) ;
+  b3_ VARCHAR2(32000);
+  b4_ VARCHAR2(32000) ;
+
+  third_amt_ VARCHAR2(15);
+  m0_ VARCHAR2(32000);
+
+  m1_ VARCHAR2(32000);
+  m2_ VARCHAR2(32000) ;
+  m3_ VARCHAR2(32000);
+  m4_ VARCHAR2(32000) ;
+  p4_ VARCHAR2(32000) ;
+  p5_ VARCHAR2(32000);
+  p6_ VARCHAR2(32000);
+   r0_ VARCHAR2(32000) ;
+
+  r1_ VARCHAR2(32000);
+
+  r2_ VARCHAR2(32000) ;
+
+
+
+------------------
+   d0_ VARCHAR2(32000) ;
+   d1_ FLOAT ;
+   d2_ VARCHAR2(32000);
+   d3_ FLOAT ;
+   d4_ VARCHAR2(32000) ;
+   d5_ VARCHAR2(32000) ;
+   d6_ VARCHAR2(32000) ;
+   d7_ DATE ;
+   d8_ VARCHAR2(32000); 
+   d9_ VARCHAR2(32000) ;
+   d10_ VARCHAR2(32000) ;
+   d11_ VARCHAR2(32000);
+   d12_ VARCHAR2(32000) ;
+   d13_ VARCHAR2(32000);
+   d14_ VARCHAR2(32000);
+
+   d15_ VARCHAR2(32000);
+   
+   ------------
+  
+   s0_ VARCHAR2(32000) ;
+   s1_ VARCHAR2(32000);
+   s2_ FLOAT := NULL;
+   s3_ VARCHAR2(32000);
+   s4_ DATE ;
+   s5_ FLOAT;
+   s6_ FLOAT ;
+   s7_ FLOAT ;
+   s8_ VARCHAR2(32000);
+   s9_ VARCHAR2(32000);
+   s10_ VARCHAR2(32000) ;
+   s11_ FLOAT;
+   s12_ VARCHAR2(32000) ;
+   -------
+    n0_ VARCHAR2(32000) ;
+    n1_ VARCHAR2(32000) ;
+    n2_ VARCHAR2(32000) ;
+    n3_ VARCHAR2(32000);
+    n4_ VARCHAR2(32000) ;
+   
+current_row_state_ VARCHAR2(30) ;
+
+ 
+  
+
+CURSOR get_ext_file_trans IS 
+      ***code hidden due to security purpose***  
+      
+CURSOR get_data IS
+select  IRS1099_TYPE_ID,vat_code,identity  
+from MAN_SUPP_INVOICE_ITEM i where identity = '' and IRS1099_TYPE_ID<>' ' and vat_code<>' ' and identity<>' ' and rownum<=1  ;   
+
+BEGIN
+  
+IFSAPP.Log_SYS.Init_Debug_Session_('en');
+FOR rec_ IN get_ext_file_trans
+    LOOP
+      
+    -----variable-----
+     p0_ := NULL;
+
+  p1_  := NULL;
+
+  p2_  := NULL;
+
+
+  a0_  := NULL;
+  a1_  := NULL;
+
+  a2_  := NULL;
+  
+  a4_  := 'DO';
+
+  b0_  := '';
+  
+  b4_  := 'DO';
+
+ 
+  m0_  := NULL;
+
+  m1_ := NULL;
+  m2_  := NULL;
+
+  m4_  := 'DO';
+  p4_  := 'DO';
+  
+   r0_  := NULL;
+
+  r1_  := NULL;
+
+  r2_  := NULL;
+
+
+
+------------------
+   d0_  := 'AAFL';
+ 
+   d2_  := '';
+   d3_  := NULL;
+   d4_  := 'U2I';
+   d5_  := NULL;
+   d6_  := 'AC';
+   d9_  := 'Supplier';
+  
+   d11_  := 'U2SI';
+   d12_  := 'No';
+   d13_  := 'AAFL';
+   d14_  := NULL;
+
+   d15_  := 'Preliminary';
+   
+   ------------
+  
+   s0_  := 'Preliminary';
+   s1_  := 'Preliminary';
+   s2_  := NULL;
+   s3_  := '';
+   s4_  := NULL;
+   s5_  := NULL;
+   s6_  := NULL;
+   s7_  := 1;
+   s8_  := 'FALSE';
+   s9_  := NULL;
+   s10_  := 'AAFL';
+  
+   s12_  := 'FALSE';
+   -------
+    n0_  := '';
+   
+    n2_  := '4';
+  
+    n4_  := 'DO';
+     
+        voucher_text_  :=  Supplier_Info_API.Get_Name(rec_.C5);
+third_amt_:=0.010526*rec_.N1;
+inv_recipient_ :=Invoice_Info_API.Get_Pay_Term_Id('AAFL',rec_.C5,'Supplier') ;
+pay_term_id_ :=Invoice_Info_API.Get_Pay_Term_Id('AAFL',rec_.C5,'Supplier') ;
+
+IF pay_term_id_ = 'U2D000' THEN
+    p_id_ := TO_CHAR(CURRENT_DATE, 'yyyy-MM-dd');
+    
+  ELSIF pay_term_id_ = 'U2D015' THEN
+    p_id_ := TO_CHAR(CURRENT_DATE+15, 'yyyy-MM-dd');
+  ELSIF pay_term_id_ = 'U2D007' THEN
+    p_id_ := TO_CHAR(CURRENT_DATE+7, 'yyyy-MM-dd');
+    ELSIF pay_term_id_ = 'U2D045' THEN
+    p_id_ := TO_CHAR(CURRENT_DATE+45, 'yyyy-MM-dd');
+    ELSIF pay_term_id_ = 'U2D120' THEN
+    p_id_ := TO_CHAR(CURRENT_DATE+120, 'yyyy-MM-dd');
+    ELSIF pay_term_id_ = 'U2D021' THEN
+    p_id_ := TO_CHAR(CURRENT_DATE+21, 'yyyy-MM-dd');
+    ELSIF pay_term_id_ = 'U2D030' THEN
+    p_id_ := TO_CHAR(CURRENT_DATE+30, 'yyyy-MM-dd');
+    ELSIF pay_term_id_ = 'U2D060' THEN
+    p_id_ := TO_CHAR(CURRENT_DATE+60, 'yyyy-MM-dd');
+    ELSIF pay_term_id_ = 'U2D090' THEN
+    p_id_ := TO_CHAR(CURRENT_DATE+90, 'yyyy-MM-dd');
+  ELSE
+  --  p_id_:=' ';
+    p_id_:=TO_CHAR(CURRENT_DATE, 'yyyy-MM-dd');
+  END IF;
+ 
+  SELECT vat_code INTO vat_code_  FROM MAN_SUPP_INVOICE_ITEM
+  WHERE identity = rec_.C5  and vat_code<>' ' and identity<>' ' and rownum<=1;
+  
+   SELECT IRS1099_TYPE_ID INTO income_type_id_  FROM MAN_SUPP_INVOICE_ITEM
+  WHERE identity = rec_.C5 and IRS1099_TYPE_ID<>' ' and vat_code<>' ' and identity<>' ' and rownum<=1;
+  
+ 
+  
+
+    
+ p3_ := 'COMPANY' || chr(31) || 'AAFL' || chr(30) ||
+                         'PARTY_TYPE' || chr(31) || 'Supplier' || chr(30) ||
+                         'IDENTITY' || chr(31) || rec_.C5 || chr(30) ||
+                         'INVOICE_TYPE' || chr(31) || 'U2SUPPINV' ||
+                         chr(30) || 'SERIES_ID' || chr(31) || 'U2SI' ||
+                         chr(30) || 'INVOICE_NO' || chr(31) || rec_.C10 ||
+                         chr(30) || 'NCF_REFERENCE'||chr(31) || rec_.C6 ||
+                         chr(30)||'CURRENCY' || chr(31) || 'BDT' ||
+                         chr(30) || 'CURR_RATE' || chr(31) || '1' ||
+                         chr(30) || 'INVOICE_DATE' || chr(31) ||
+                         TO_CHAR(CURRENT_DATE, 'yyyy-MM-dd') || chr(30) ||
+                         'ARRIVAL_DATE' || chr(31) ||
+                         TO_CHAR(CURRENT_DATE, 'yyyy-MM-dd') || chr(30) ||
+                         'PAY_TERM_BASE_DATE' || chr(31) ||
+                         TO_CHAR(CURRENT_DATE, 'yyyy-MM-dd') || chr(30) ||
+                         'PAY_TERM_ID' || chr(31) ||pay_term_id_|| chr(30) ||
+                         'DUE_DATE' || chr(31) || p_id_|| chr(30) ||'PL_PAY_DATE' || chr(31) || p_id_ || chr(30) ||
+                         'AUTH_ID' || chr(31) || '*' || chr(30) ||
+                         'INV_GROSS_CURR_AMT' || chr(31) || rec_.N1 ||
+                         chr(30) || 'INV_ACTUAL_NET_CURR_AMT' || chr(31) ||
+                         rec_.N1 || chr(30) || 'INV_VAT_CURR_AMT' || chr(31) || '0' ||
+                         chr(30) || 'ADV_INV' || chr(31) || 'FALSE' ||
+                         chr(30) || 'TAX_CURR_RATE' || chr(31) || '1' ||chr(30) || 'INVOICE_RECIPIENT' || chr(31) ||'U2M' || chr(30) || 'DELIVERY_ADDRESS_ID' ||
+                         chr(31) || '1' || chr(30) || 'PRELIM_CODE' ||
+                         chr(31) || '' || chr(30) || 'NATIONAL_BANK_CODE' ||
+                         chr(31) || '' || chr(30) || 'NATURE_OF_BUSINESS' ||
+                         chr(31) || '' || chr(30) || 'BRANCH' || chr(31) || '' ||
+                         chr(30) || 'AFF_LINE_POST' || chr(31) || 'FALSE' ||
+                         chr(30) || 'DIV_FACTOR' || chr(31) || '1' ||
+                         chr(30) || 'MULTI_COMPANY_INVOICE' || chr(31) ||
+                         'FALSE' || chr(30) || 'VOU_DATE' || chr(31) ||
+                         TO_CHAR(CURRENT_DATE, 'yyyy-MM-dd') || chr(30) ||
+                         'VOUCHER_TEXT' || chr(31) || voucher_text_  ||
+                         chr(30) || 'DELIVERY_DATE' || chr(31) ||
+                         TO_CHAR(CURRENT_DATE, 'yyyy-MM-dd') || chr(30) ||
+                         'INVOICE_ADDRESS_ID' || chr(31) || '1' || chr(30) ||
+                         'PARALLEL_CURR_RATE' || chr(31) || '95' || chr(30) ||
+                         'PARALLEL_DIV_FACTOR' || chr(31) || '1' || chr(30) ||
+                         'USE_PROJ_ADDRESS_FOR_TAX_DB' || chr(31) ||
+                         'FALSE' || chr(30) || 'USER_GROUP' || chr(31) || 'AC' ||
+                         chr(30) || 'CREATE_LINE_FROM_HEAD' || chr(31) ||
+                         'FALSE' || chr(30) || 'CALLING_METHOD' || chr(31) || '' ||
+                         chr(30);    
+ 
+  
+IFSAPP.MAN_SUPP_INVOICE_API.NEW__(p0_, p1_, p2_, p3_, p4_);
+ commit;   
+ invoice_id_  :=   MAN_SUPP_INVOICE_API.Get_Invoice_Id('AAFL',rec_.C5,'Supplier','U2SI',rec_.C10 );
+ 
+ p5_         := 'INSTALLMENT_ID' || chr(31) || '1'  || chr(30) ||
+                 'AUTHORIZED' || chr(31) || 'FALSE' || chr(30) ||
+                 'CURR_AMOUNT' || chr(31) ||rec_.N1 || chr(30) ||
+                 'ADVANCE_INVOICE_MATCHED_AMOUNT' || chr(31) || '0' ||
+                 chr(30) || 'AUTH_ID' || chr(31) || '*' || chr(30) ||
+                 'COMPANY' || chr(31) || 'AAFL' || chr(30) || 'IDENTITY' ||
+                 chr(31) || rec_.C5 || chr(30) || 'PARTY_TYPE' ||
+                 chr(31) || 'Supplier' || chr(30) || 'INVOICE_ID' ||
+                 chr(31) || invoice_id_ || chr(30) || 'CURR_CODE' ||
+                 chr(31) || 'BDT' || chr(30) || 'CURR_RATE' || chr(31) || '1' ||
+                 chr(30) || 'DIV_FACTOR' || chr(31) || '1' || chr(30) ||
+                 'DUE_DATE' || chr(31) ||
+                 p_id_ || chr(30) ||
+                 'VAT_DISTRIBUTION_DB' || chr(31) || 'EVEN' || chr(30) ||
+                 'CHECK_RECIPIENT' || chr(31) || 'Payee' || chr(30) ||
+                 'CHANGED_FROM_CLIENT' || chr(31) || 'TRUE' || chr(30) ||
+                 'OTHER_PAYEE' || chr(31) || '' || chr(30);
+                 
+IFSAPP.MAN_SUPP_INVOICE_PLAN_API.NEW__(r0_, r1_, r2_, p5_, 'DO');
+
+COMMIT;  
+ 
+
+ a3_ := 'COMPANY' || chr(31) || 'AAFL' || chr(30) || 'IDENTITY' || chr(31) ||
+         rec_.C5 || chr(30) || 'PARTY_TYPE' || chr(31) || 'Supplier' ||
+         chr(30) || 'INVOICE_ID' || chr(31) || invoice_id_ || chr(30) ||
+         'ITEM_ID' || chr(31) || '1' || chr(30) || 'DELIV_TYPE_ID' ||
+         chr(31) || '' || chr(30) || 'IRS1099_TYPE_ID' || chr(31) ||
+         income_type_id_ || chr(30) || 'VAT_CODE' || chr(31) ||vat_code_ ||
+         chr(30) || 'TAX_CALC_STRUCTURE_ID' || chr(31) || '' || chr(30) ||
+         'GROSS_AMOUNT' || chr(31) || rec_.N1 || chr(30) ||
+         'ACTUAL_NET_CURR_AMOUNT' || chr(31) || rec_.N1 || chr(30) ||
+         'VAT_CURR_AMOUNT' || chr(31) || '0' || chr(30) ||
+         'NON_DEDUCT_TAX_CURR_AMOUNT' || chr(31) || '0' || chr(30) ||
+         'NET_CURR_AMOUNT' || chr(31) || rec_.N1 || chr(30) ||
+         'TOTAL_TAX_CURR_AMOUNT' || chr(31) || '0' || chr(30) ||
+         'WITHHELD_TAX_CURR_AMOUNT' || chr(31) || '' || chr(30) ||
+         'PO_REF_NUMBER' || chr(31) || '' || chr(30) || 'CORRECTED_ITEM_ID' ||
+         chr(31) || '' || chr(30) || '' || chr(31) || '1' || chr(30) ||
+         'USER_GROUP' || chr(31) || 'AC' || chr(30) || 'PRELIM_CODE' ||
+         chr(31) || '' || chr(30) || 'VOUCHER_DATE' || chr(31) ||
+         TO_CHAR(CURRENT_DATE, 'yyyy-MM-dd') || chr(30) || 'AUTH_ID' || chr(31) || '*' ||
+         chr(30);
+  IFSAPP.MAN_SUPP_INVOICE_ITEM_API.NEW__(a0_, a1_, a2_, a3_, a4_);
+
+  commit;
+
+  b3_ := 'WITHHELD_TAX_CURR_AMOUNT' || chr(31) || '0' || chr(30) ||
+         'WITHHELD_TAX_DOM_AMOUNT' || chr(31) || '0' || chr(30) ||
+         'WITHHELD_TAX_PARALLEL_AMT' || chr(31) || '0' || chr(30) ||
+         'DELIV_TYPE_ID' || chr(31) || '' || chr(30) || 'IGNORE_IF_AUTH' ||
+         chr(31) || 'TRUE' || chr(30) || 'INVOICE_ID_HEAD' || chr(31) ||
+         invoice_id_ || chr(30) || 'AUTH_ID' || chr(31) || '*' || chr(30);
+
+  IFSAPP.MAN_SUPP_INVOICE_ITEM_API.MODIFY__(b0_, a1_, a2_, b3_, b4_);
+  commit;
+  
+
+
+  ----------------MSI lines---------
+  third_amt_ := 0.010526 * rec_.N1;
+  m3_        := 'OPTIONAL_CODE' || chr(31) || vat_code_ || chr(30) ||
+                'NET_CURR_AMOUNT' || chr(31) || '' || chr(30) ||
+                'CURR_AMOUNT_DEBIT' || chr(31) || rec_.N1 || chr(30) ||
+                'NON_DEDUCT_TAX_CURR_AMOUNT' || chr(31) || '' || chr(30) ||
+                'CURR_AMOUNT' || chr(31) || rec_.N1 || chr(30) ||
+                'DOM_AMOUNT' || chr(31) || rec_.N1 || chr(30) ||
+                --'THIRD_AMOUNT' || chr(31) || third_amt_ || chr(30) ||
+                'TEXT' || chr(31) || rec_.C6 || chr(30) || 'ADD_INTERNAL' ||
+                chr(31) || 'FALSE' || chr(30) || 'INVOICE_ID' || chr(31) ||
+                invoice_id_ || chr(30) || 'REFERENCE' || chr(31) ||
+                'MANUAL' || chr(30) || 'VOUCHER_DATE' || chr(31) ||
+                TO_CHAR(CURRENT_DATE, 'yyyy-MM-dd') || chr(30) ||
+                'USER_GROUP' || chr(31) || 'AC' || chr(30) ||
+                'INTERNAL_SEQ' || chr(31) || '' || chr(30) || 'COMPANY' ||
+                chr(31) || 'AAFL' || chr(30) || 'IDENTITY' || chr(31) ||
+                rec_.C5 || chr(30) || 'PARTY_TYPE' || chr(31) ||
+                'Supplier' || chr(30) || 'VOUCHER_COMPANY' || chr(31) ||
+                'AAFL' || chr(30) || 'CODE_A' || chr(31) || rec_.C1 ||
+                chr(30) || 'CODE_B' || chr(31) || rec_.C2
+               
+                || chr(30) || 'CODE_C' || chr(31) || rec_.C3
+               
+                || chr(30) || 'CODE_D' || chr(31) || rec_.C4
+               
+                || chr(30) || 'CODE_E' || chr(31) || '' || chr(30) ||
+                'CODE_F' || chr(31) || '' || chr(30) || 'CODE_G' || chr(31) || '' ||
+                chr(30) || 'CODE_H' || chr(31) || '' || chr(30) || 'CODE_I' ||
+                chr(31) || '' || chr(30) || 'CODE_J' || chr(31) || '' ||
+                chr(30) || 'AUTO_POSTING_PROC_CODE' || chr(31) || '' ||
+                chr(30) || 'POSTING_TYPE' || chr(31) || 'MANUAL' || chr(30);
+
+  IFSAPP.MAN_SUPP_INVOICE_POSTINGS_API.NEW__(m0_, m1_, m2_, m3_, m4_);
+  commit;     
+  
+  /* ------Post Invoice------ */
+    d1_:= TO_NUMBER( MAN_SUPP_INVOICE_API.Get_Invoice_Id('AAFL',rec_.C5,'Supplier','U2SI',rec_.C10 ));
+    d8_:= rec_.C5 ;
+    d10_ := rec_.C10 ;
+    s11_ := TO_NUMBER(MAN_SUPP_INVOICE_API.Get_Invoice_Id('AAFL',rec_.C5,'Supplier','U2SI',rec_.C10 ));
+    IFSAPP.Advance_Inv_Reference_API.Check_Adv_Invs_Paid( d0_ , d1_ );
+    IFSAPP.Man_Supp_Invoice_API.Create_Vou_After_Inv__(d2_ , d3_ , d4_ , d5_ , d6_ , d7_ , d0_ , d8_ , d9_ , d1_ , d10_ , d11_ , d12_ );
+    commit;
+    current_row_state_ := IFSAPP.Invoice_API.Get_Objstate(d13_ , d1_ );
+    d14_ := IFSAPP.Tax_Handling_Invoic_Util_API.Get_Supp_Taxes_No_Liab_Date( d13_ , d1_ , d15_ , current_row_state_);
+    
+    
+    IFSAPP.Man_Supp_Invoice_API.Get_Changed_Inv_Attrs__( s0_ , s1_ , s2_ , s3_ , s4_ , s5_ , s6_ , s7_ , s7_ , s7_ , s8_ , s9_ , s10_ , s11_ );
+    s12_ := IFSAPP.Add_Investment_Info_API.Exist_Add_Investment_Info( 'INVOICE', s10_ , s10_ , s11_ , NULL ,'*','*');
+    commit;  
+    
+  /*---------- Authorize ---------*/
+    select Objid INTO n1_ FROM MAN_SUPP_INVOICE_PLAN  where invoice_id = TO_NUMBER(invoice_id_);    
+     n3_  := 'AUTHORIZED'||chr(31)||'TRUE'||chr(30)||'CHANGED_FROM_CLIENT'||chr(31)||'TRUE'||chr(30)||'OTHER_PAYEE'||chr(31)||''||chr(30);
+    IFSAPP.MAN_SUPP_INVOICE_PLAN_API.MODIFY__( n0_ , n1_ , n2_ , n3_ , n4_ );
+
+    commit;
+  
+ END LOOP;
+  
+ Ext_File_Load_API.Update_State (load_file_id_, '4');
+ 
+END Start_Ext_MSI;
