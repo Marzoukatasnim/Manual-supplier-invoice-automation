@@ -95,17 +95,8 @@ IS
     n4_ VARCHAR2(32000) ;
    
 current_row_state_ VARCHAR2(30) ;
-
- 
-  
-
 CURSOR get_ext_file_trans IS 
       ***code hidden due to security purpose***  
-      
-CURSOR get_data IS
-select  IRS1099_TYPE_ID,vat_code,identity  
-from MAN_SUPP_INVOICE_ITEM i where identity = '' and IRS1099_TYPE_ID<>' ' and vat_code<>' ' and identity<>' ' and rownum<=1  ;   
-
 BEGIN
   
 IFSAPP.Log_SYS.Init_Debug_Session_('en');
@@ -187,15 +178,14 @@ FOR rec_ IN get_ext_file_trans
   
     n4_  := 'DO';
      
-        voucher_text_  :=  Supplier_Info_API.Get_Name(rec_.C5);
+voucher_text_  :=  Supplier_Info_API.Get_Name(rec_.C5);
 third_amt_:=0.010526*rec_.N1;
 inv_recipient_ :=Invoice_Info_API.Get_Pay_Term_Id('AAFL',rec_.C5,'Supplier') ;
 pay_term_id_ :=Invoice_Info_API.Get_Pay_Term_Id('AAFL',rec_.C5,'Supplier') ;
 
 IF pay_term_id_ = 'U2D000' THEN
     p_id_ := TO_CHAR(CURRENT_DATE, 'yyyy-MM-dd');
-    
-  ELSIF pay_term_id_ = 'U2D015' THEN
+ ELSIF pay_term_id_ = 'U2D015' THEN
     p_id_ := TO_CHAR(CURRENT_DATE+15, 'yyyy-MM-dd');
   ELSIF pay_term_id_ = 'U2D007' THEN
     p_id_ := TO_CHAR(CURRENT_DATE+7, 'yyyy-MM-dd');
@@ -222,10 +212,6 @@ IF pay_term_id_ = 'U2D000' THEN
    SELECT IRS1099_TYPE_ID INTO income_type_id_  FROM MAN_SUPP_INVOICE_ITEM
   WHERE identity = rec_.C5 and IRS1099_TYPE_ID<>' ' and vat_code<>' ' and identity<>' ' and rownum<=1;
   
- 
-  
-
-    
  p3_ := 'COMPANY' || chr(31) || 'AAFL' || chr(30) ||
                          'PARTY_TYPE' || chr(31) || 'Supplier' || chr(30) ||
                          'IDENTITY' || chr(31) || rec_.C5 || chr(30) ||
@@ -318,7 +304,7 @@ COMMIT;
          chr(31) || '' || chr(30) || 'VOUCHER_DATE' || chr(31) ||
          TO_CHAR(CURRENT_DATE, 'yyyy-MM-dd') || chr(30) || 'AUTH_ID' || chr(31) || '*' ||
          chr(30);
-  IFSAPP.MAN_SUPP_INVOICE_ITEM_API.NEW__(a0_, a1_, a2_, a3_, a4_);
+  IFSAPP.INV_ITEM_API.NEW__(a0_, a1_, a2_, a3_, a4_);
 
   commit;
 
@@ -329,12 +315,12 @@ COMMIT;
          chr(31) || 'TRUE' || chr(30) || 'INVOICE_ID_HEAD' || chr(31) ||
          invoice_id_ || chr(30) || 'AUTH_ID' || chr(31) || '*' || chr(30);
 
-  IFSAPP.MAN_SUPP_INVOICE_ITEM_API.MODIFY__(b0_, a1_, a2_, b3_, b4_);
+  IFSAPP.INV_ITEM_API.MODIFY__(b0_, a1_, a2_, b3_, b4_);
   commit;
   
 
 
-  ----------------MSI lines---------
+  /*----------------creating MSI lines---------*/
   third_amt_ := 0.010526 * rec_.N1;
   m3_        := 'OPTIONAL_CODE' || chr(31) || vat_code_ || chr(30) ||
                 'NET_CURR_AMOUNT' || chr(31) || '' || chr(30) ||
@@ -370,15 +356,15 @@ COMMIT;
   IFSAPP.MAN_SUPP_INVOICE_POSTINGS_API.NEW__(m0_, m1_, m2_, m3_, m4_);
   commit;     
   
-  /* ------Post Invoice------ */
+  /* ------Posting Invoice------ */
     d1_:= TO_NUMBER( MAN_SUPP_INVOICE_API.Get_Invoice_Id('AAFL',rec_.C5,'Supplier','U2SI',rec_.C10 ));
     d8_:= rec_.C5 ;
     d10_ := rec_.C10 ;
     s11_ := TO_NUMBER(MAN_SUPP_INVOICE_API.Get_Invoice_Id('AAFL',rec_.C5,'Supplier','U2SI',rec_.C10 ));
-    IFSAPP.Advance_Inv_Reference_API.Check_Adv_Invs_Paid( d0_ , d1_ );
+    IFSAPP.Advance_Inv_Ref_API.Check_Adv_Invs_Paid( d0_ , d1_ );
     IFSAPP.Man_Supp_Invoice_API.Create_Vou_After_Inv__(d2_ , d3_ , d4_ , d5_ , d6_ , d7_ , d0_ , d8_ , d9_ , d1_ , d10_ , d11_ , d12_ );
     commit;
-    current_row_state_ := IFSAPP.Invoice_API.Get_Objstate(d13_ , d1_ );
+    current_row_state_ := ***api hidden due to security purpose***;
     d14_ := IFSAPP.Tax_Handling_Invoic_Util_API.Get_Supp_Taxes_No_Liab_Date( d13_ , d1_ , d15_ , current_row_state_);
     
     
@@ -386,7 +372,7 @@ COMMIT;
     s12_ := IFSAPP.Add_Investment_Info_API.Exist_Add_Investment_Info( 'INVOICE', s10_ , s10_ , s11_ , NULL ,'*','*');
     commit;  
     
-  /*---------- Authorize ---------*/
+  /*---------- Authorize the MSI ---------*/
     select Objid INTO n1_ FROM MAN_SUPP_INVOICE_PLAN  where invoice_id = TO_NUMBER(invoice_id_);    
      n3_  := 'AUTHORIZED'||chr(31)||'TRUE'||chr(30)||'CHANGED_FROM_CLIENT'||chr(31)||'TRUE'||chr(30)||'OTHER_PAYEE'||chr(31)||''||chr(30);
     IFSAPP.MAN_SUPP_INVOICE_PLAN_API.MODIFY__( n0_ , n1_ , n2_ , n3_ , n4_ );
